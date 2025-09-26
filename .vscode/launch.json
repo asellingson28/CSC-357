@@ -1,0 +1,16 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run pointers (lldb)",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${fileDirname}/${fileBasenameNoExtension}",
+      "args": [],
+      "cwd": "${fileDirname}",
+      "MIMode": "lldb",
+      "externalConsole": true,      // opens a separate terminal so you can see output
+      "preLaunchTask": "C/C++: clang++ build active file"
+    }
+  ]
+}
