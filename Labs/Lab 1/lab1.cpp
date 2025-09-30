@@ -67,7 +67,7 @@ void initAlphabet() {
 }
 
 void freeMemory() {
-    // TODO free up memory here
+    // free up memory here
     alphaliste *p = head;
     while (p) {
         alphaliste *p_next = p->next;  
@@ -135,12 +135,12 @@ int main() {
 
     char word[256]; // 256 byte limit
     
+    // continually enter a word and word is not print
     while (cin >> word && std::strcmp(word, "print") != 0) {
         insertWord(word);
     }
     printAllLetters();
     freeMemory();
-    cout << head;
     return 0;
 }
 
