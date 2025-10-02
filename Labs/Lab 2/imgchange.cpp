@@ -33,7 +33,127 @@ be skipped!
 
 */
 
-int main() {
-    
+#include <cstdint> //unsigned ints
+#include <iostream>
+#include <stdlib.h>  
+
+using namespace std;
+
+
+struct BMP {
+
+};
+
+
+typedef unsigned short WORD;
+typedef unsigned int DWORD;
+typedef unsigned int LONG;
+typedef unsigned char BYTE;
+
+struct BITMAPFILEHEADER
+{
+    WORD bfType; //specifies the file type
+    DWORD bfSize; //specifies the size in bytes of the bitmap file
+    WORD bfReserved1; //reserved; must be 0
+    WORD bfReserved2; //reserved; must be 0
+    DWORD bfOffBits; //species the offset in bytes from the bitmapfileheader to the bitmap bits
+};
+struct BITMAPINFOHEADER
+{
+    DWORD biSize; //specifies the number of bytes required by the struct
+    LONG biWidth; //specifies width in pixels
+    LONG biHeight; //species height in pixels
+    WORD biPlanes; //specifies the number of color planes, must be 1
+    WORD biBitCount; //specifies the number of bit per pixel
+    DWORD biCompression;//spcifies the type of compression
+    DWORD biSizeImage; //size of image in bytes
+    LONG biXPelsPerMeter; //number of pixels per meter in x axis
+    LONG biYPelsPerMeter; //number of pixels per meter in y axis
+    DWORD biClrUsed; //number of colors used by th ebitmap
+    DWORD biClrImportant; //number of colors that are important
+};
+
+// each pixel has 3 bytes
+struct PIXEL
+{
+    unsigned char b; // 1 byte
+    unsigned char g; // 1 byte
+    unsigned char r; // 1 byte
+};
+
+
+void getPixel(int x, int y, int w, int h) {
+
+}
+
+
+int main(int argc, char *argv[]) { // argc is argument count, argv is the cmdline input where argv[0] is the filename
+    // we want filename inputfile outputfile operation constantfactor such that argc = 5
+    if (argc != 5) {
+        return 1;
+    }
+    string inputname = argv[1];
+    string outputname = argv[2];
+    string operation = argv[3];
+    double constfac = atof(argv[4]); 
+
+    FILE *inputfile = fopen(inputname.c_str(), "rb");
+    FILE *outfile = fopen(outputname.c_str(), "wb");
+
+    BITMAPFILEHEADER bfh;
+    BITMAPINFOHEADER bih;
+
+    // reads the amount of bytes of a bfh and bih from input file into local program memory
+    //fread where, how much, how often, input file
+    // fread(&bfh, sizeof(BITMAPFILEHEADER), 1, inputfile);
+    fread(&bfh.bfType, 2, 1, inputfile);
+    fread(&bfh.bfSize, 4, 1, inputfile);
+    fread(&bfh.bfReserved1, 2, 1, inputfile);
+    fread(&bfh.bfReserved2, 2, 1, inputfile);
+    fread(&bfh.bfOffBits, 4, 1, inputfile);
+    fread(&bih, sizeof(BITMAPINFOHEADER), 1, inputfile);
+
+    int w = bih.biWidth;
+    int h = bih.biHeight;
+    int size = bih.biSizeImage; // w * h including padding
+
+    BYTE* data = (BYTE *)malloc(size);
+    fread(data, size, 1, inputfile);
+    fclose(inputfile);
+    BYTE* out = (BYTE *) malloc(size);
+    memcpy(out, data, size);
+    /* Each pixel is represented by three bytes. 
+    The first byte gives the intensity of the red component, 
+    the second byte gives the intensity of the green component, 
+    and the third byte gives the intensity of the blue component. from */
+
+    // data starts on the bottom left 
+    // https://en.wikipedia.org/wiki/Row-_and_column-major_order
+
+    fwrite(&bfh.bfType,     2, 1, outfile);
+    fwrite(&bfh.bfSize,     4, 1, outfile);
+    fwrite(&bfh.bfReserved1,2, 1, outfile);
+    fwrite(&bfh.bfReserved2,2, 1, outfile);
+    fwrite(&bfh.bfOffBits,  4, 1, outfile);
+    fwrite(&bih, sizeof(BITMAPINFOHEADER), 1, outfile);
+    for (int x = 0; x < w; x++)
+    {
+        for (int y = 0; y < h; y++)
+        {
+            int rowStride = w * 3 + (4 - (w * 3) % 4) % 4;
+            int idx = y * rowStride + x * 3;
+
+
+            BYTE B = data[idx];
+            BYTE G = data[idx + 1];
+            BYTE R = data[idx + 2];
+
+            out[idx] = B;
+            out[idx + 1] = G;
+            out[idx + 2] = R;
+        }
+        
+    }
+    fwrite(out, size, 1, outfile);
     return 0;
 }
