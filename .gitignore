@@ -1043,3 +1043,4 @@ dkms.conf
 *.uf2
 # Raspberry Pi Pico disassembler file
 *.dis
+Labs/Lab 2/result.bmp

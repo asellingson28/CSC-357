@@ -40,11 +40,6 @@ be skipped!
 using namespace std;
 
 
-struct BMP {
-
-};
-
-
 typedef unsigned short WORD;
 typedef unsigned int DWORD;
 typedef unsigned int LONG;
@@ -76,22 +71,58 @@ struct BITMAPINFOHEADER
 // each pixel has 3 bytes
 struct PIXEL
 {
-    unsigned char b; // 1 byte
-    unsigned char g; // 1 byte
-    unsigned char r; // 1 byte
+    // in range 0 to 255 
+    BYTE b; // 1 byte
+    BYTE g; // 1 byte
+    BYTE r; // 1 byte
 };
 
+struct FPixel {
+    double b, g, r; // 0..1
+};
 
-void getPixel(int x, int y, int w, int h) {
+enum class Op { Contrast, Saturation, Lightness };
 
+FPixel normalizePixel(const PIXEL& p) {
+    return FPixel{
+        p.b / 255.0,
+        p.g / 255.0,
+        p.r / 255.0
+    };
+}
+
+PIXEL unnormalizePixel(const FPixel& p){
+    PIXEL q;
+    q.b = (BYTE)(p.b * 255.0);
+    q.g = (BYTE)(p.g * 255.0);
+    q.r = (BYTE)(p.r * 255.0);
+    return q;
 }
 
 
+FPixel contrastPixel(const FPixel& p, double factor) {
+    return FPixel{pow(p.b, factor), pow(p.g, factor), pow(p.r, factor)};
+}
+FPixel saturatePixel(const FPixel& p, double factor) {
+    double avg = (p.r + p.g + p.b) / 3.0;
+
+    return FPixel{
+        p.b + (p.b - avg) * factor,
+        p.g + (p.g - avg) * factor,
+        p.r + (p.r - avg) * factor
+    };
+}
+FPixel lightenPixel(const FPixel& p, double factor) {
+
+    return FPixel{
+        p.b + factor,
+        p.g + factor,
+        p.r + factor
+    };
+}
 int main(int argc, char *argv[]) { // argc is argument count, argv is the cmdline input where argv[0] is the filename
     // we want filename inputfile outputfile operation constantfactor such that argc = 5
-    if (argc != 5) {
-        return 1;
-    }
+    if (argc != 5) return 1;
     string inputname = argv[1];
     string outputname = argv[2];
     string operation = argv[3];
@@ -121,14 +152,30 @@ int main(int argc, char *argv[]) { // argc is argument count, argv is the cmdlin
     fread(data, size, 1, inputfile);
     fclose(inputfile);
     BYTE* out = (BYTE *) malloc(size);
-    memcpy(out, data, size);
+    // memcpy(out, data, size);
     /* Each pixel is represented by three bytes. 
     The first byte gives the intensity of the red component, 
     the second byte gives the intensity of the green component, 
     and the third byte gives the intensity of the blue component. from */
 
     // data starts on the bottom left 
-    // https://en.wikipedia.org/wiki/Row-_and_column-major_order
+    Op op;
+
+    if (operation == "contrast") {
+        // spec: factor in [0, 100]
+        if (!(constfac >= 0.0 && constfac <= 100.0)) return 3;
+        op = Op::Contrast;
+    } else if (operation == "saturation") {
+        // spec: factor in [0, 1]
+        if (!(constfac >= 0.0 && constfac <= 1.0)) return 3;
+        op = Op::Saturation;
+    } else if (operation == "lightness") {
+        // spec: factor in [-1, 1]
+        if (!(constfac >= -1.0 && constfac <= 1.0)) return 3;
+        op = Op::Lightness;
+    } else {
+        return 3; // unknown operation
+    }
 
     fwrite(&bfh.bfType,     2, 1, outfile);
     fwrite(&bfh.bfSize,     4, 1, outfile);
@@ -143,16 +190,22 @@ int main(int argc, char *argv[]) { // argc is argument count, argv is the cmdlin
             int rowStride = w * 3 + (4 - (w * 3) % 4) % 4;
             int idx = y * rowStride + x * 3;
 
-
+            PIXEL p;
             BYTE B = data[idx];
             BYTE G = data[idx + 1];
             BYTE R = data[idx + 2];
+            p = { B, G, R };
+            FPixel q = normalizePixel(p);
 
-            out[idx] = B;
-            out[idx + 1] = G;
-            out[idx + 2] = R;
+            // switch case with enum class
+            switch (op) {
+                case Op::Contrast:   q = contrastPixel(q,   constfac); break;
+                case Op::Saturation: q = saturatePixel(q,   constfac); break;
+                case Op::Lightness:  q = lightenPixel(q,    constfac); break;
+            }
+            PIXEL o = unnormalizePixel(q);
+            out[idx]     = o.b; out[idx + 1] = o.g; out[idx + 2] = o.r;
         }
-        
     }
     fwrite(out, size, 1, outfile);
     return 0;
