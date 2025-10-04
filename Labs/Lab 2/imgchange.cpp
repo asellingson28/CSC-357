@@ -207,6 +207,7 @@ int main(int argc, char *argv[]) { // argc is argument count, argv is the cmdlin
             out[idx]     = o.b; out[idx + 1] = o.g; out[idx + 2] = o.r;
         }
     }
+    
     fwrite(out, size, 1, outfile);
     return 0;
 }
