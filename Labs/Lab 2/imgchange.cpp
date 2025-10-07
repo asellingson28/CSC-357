@@ -105,12 +105,15 @@ FPixel contrastPixel(const FPixel& p, double factor) {
 }
 FPixel saturatePixel(const FPixel& p, double factor) {
     double avg = (p.r + p.g + p.b) / 3.0;
-
-    return FPixel{
-        p.b + (p.b - avg) * factor,
-        p.g + (p.g - avg) * factor,
-        p.r + (p.r - avg) * factor
-    };
+    
+    // Clamp each channel to [0, 1]
+    double nb = p.b + (p.b - avg) * factor;
+    double ng = p.g + (p.g - avg) * factor;
+    double nr = p.r + (p.r - avg) * factor;
+    nb = nb < 0.0 ? 0.0 : (nb > 1.0 ? 1.0 : nb);
+    ng = ng < 0.0 ? 0.0 : (ng > 1.0 ? 1.0 : ng);
+    nr = nr < 0.0 ? 0.0 : (nr > 1.0 ? 1.0 : nr);
+    return FPixel{ nb, ng, nr };
 }
 FPixel lightenPixel(const FPixel& p, double factor) {
 
