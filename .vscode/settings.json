@@ -2,6 +2,12 @@
     "files.associations": {
         "iostream": "cpp",
         "__locale": "cpp",
-        "ios": "cpp"
+        "ios": "cpp",
+        "istream": "cpp",
+        "array": "cpp",
+        "string": "cpp",
+        "string_view": "cpp",
+        "vector": "cpp",
+        "bitset": "cpp"
     }
 }

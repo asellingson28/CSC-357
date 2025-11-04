@@ -143,10 +143,6 @@ int main(int argc, char *argv[])
 
     }
 
-
-
-
-
     wait(0);
 
     fwrite(&bfh.bfType, 2, 1, outfile);
@@ -161,7 +157,9 @@ int main(int argc, char *argv[])
     gettimeofday(&time_final, 0);
     long ms = time_final.tv_usec - time_initial.tv_usec;
     ms += (time_final.tv_sec - time_initial.tv_sec) * 1000000; // convert to microseconds
-    cout << ms << endl;
+    cout << "Using " << n << " subprocesses with a rotation of " << rads << " radians" << endl;
+    cout << ms << " microseconds" << endl;
+    cout << "Output: " << outputname << endl;
 
     return 0;
 }
