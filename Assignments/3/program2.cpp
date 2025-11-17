@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
     
     for (int i = 0; i < numCalls; i++)
     {
-        cout << "Iteration " << i << endl;
+        // cout << "Iteration " << i << endl;
         sprintf(args[1],"%d", i); // id (parcount)
         if(fork()==0){
 

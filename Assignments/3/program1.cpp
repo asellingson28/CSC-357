@@ -83,13 +83,14 @@ void print_matrix(const int* mat, int n, string name) {
 
 void multiply_into(int* D, const int* L, const int* R,
                           int n, int par_id, int par_count) {
+              
     for (int row = par_id; row < n; row += par_count) {
         int* Dout = D + row*n;
         const int* Lrow = L + row*n;
         for (int col = 0; col < n; ++col) {
             int sum = 0;
             for (int k = 0; k < n; ++k)
-                sum += Lrow[k] * R[k*n + col];
+            sum += Lrow[k] * R[k*n + col];
             Dout[col] = sum;
         }
     }
@@ -101,7 +102,7 @@ int main(int argc, char *argv[]) {
     int par_id = atoi(argv[1]); // par id
     int par_count = atoi(argv[2]); // numcalls
     
-    const int MATRIX_SIZE = 2; // changes matrix size
+    const int MATRIX_SIZE = 10; // changes matrix size
     const char* SHM_NAME = "matrix";
     size_t ints_needed = 3 + 3*MATRIX_SIZE*MATRIX_SIZE;
     size_t bytes = ints_needed * sizeof(int);
@@ -119,14 +120,6 @@ int main(int argc, char *argv[]) {
             << ") cannot exceed MATRIX_SIZE (" << MATRIX_SIZE << ")." << endl;
         return 1;
     }
-    // map[0] = MATRIXSIZE
-    // map[1] = spare (ready?) 
-    // map[3] = spare (num completed rows?)
-    // map[4...?] A
-    // map[?...?] B
-    // map[?...?] M
-    // vector<vector<int>> A_vec;
-    // vector<vector<int>> B_vec;
 
     // first call inits the shared mem and creates matrix
     if (par_id == 0) {
@@ -186,24 +179,42 @@ int main(int argc, char *argv[]) {
     int* Ms = M_ptr(map);
     int n = map[0];
     // M = A * B
+    struct timeval start, end;
+    gettimeofday(&start, 0);       
     multiply_into(Ms, As, Bs, n, par_id, par_count);
     synch(par_id, par_count, ready);
-    print_matrix(As, MATRIX_SIZE, "A");
-    print_matrix(Bs, MATRIX_SIZE, "B");
-    print_matrix(Ms, MATRIX_SIZE, "M");
+    // print_matrix(As, MATRIX_SIZE, "A");
+    // print_matrix(Bs, MATRIX_SIZE, "B");
+    // print_matrix(Ms, MATRIX_SIZE, "M");
+    gettimeofday(&end, 0);                     
+    double microsec = end.tv_usec - start.tv_usec;
+    microsec += (end.tv_sec - start.tv_sec) * 1000000;
+    double millisec = microsec / 1000.0;
+    if (par_id == 0) printf("Print time M = A * B: %.4f micro\n", microsec);
     // B = M * A   
+    gettimeofday(&start, 0);     
     multiply_into(Bs, Ms, As, n, par_id, par_count);
     synch(par_id, par_count, ready);
-    print_matrix(As, MATRIX_SIZE, "A");
-    print_matrix(Bs, MATRIX_SIZE, "B");
-    print_matrix(Ms, MATRIX_SIZE, "M");
-    
+    // print_matrix(As, MATRIX_SIZE, "A");
+    // print_matrix(Bs, MATRIX_SIZE, "B");
+    // print_matrix(Ms, MATRIX_SIZE, "M");
+    gettimeofday(&end, 0);                     
+    microsec = end.tv_usec - start.tv_usec;
+    microsec += (end.tv_sec - start.tv_sec) * 1000000;
+    millisec = microsec / 1000.0;
+    if (par_id == 0) printf("Print time B = M * A : %.4f micro\n", microsec);
     // M = B * A   (uses the updated B)
+    gettimeofday(&start, 0);    
     multiply_into(Ms, Bs, As, n, par_id, par_count);
     synch(par_id, par_count, ready);
-    print_matrix(As, MATRIX_SIZE, "A");
-    print_matrix(Bs, MATRIX_SIZE, "B");
-    print_matrix(Ms, MATRIX_SIZE, "M");
+    // print_matrix(As, MATRIX_SIZE, "A");
+    // print_matrix(Bs, MATRIX_SIZE, "B");
+    // print_matrix(Ms, MATRIX_SIZE, "M");
+    gettimeofday(&end, 0);                     
+    microsec = end.tv_usec - start.tv_usec;
+    microsec += (end.tv_sec - start.tv_sec) * 1000000;
+    millisec = microsec / 1000.0;
+    if (par_id == 0) printf("Print time M = B * A: %.4f micro\n", microsec);
 
     if (par_id == 0) {
         float M_f[n * n];
